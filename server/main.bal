@@ -5,16 +5,16 @@ import ballerinax/mysql;
 import ballerinax/mysql.driver as _;
 // import ballerina/io;
 
-type HoD record {
-    int HoDId;
-    string hodName;
-    string officeNum;    
+type headOfDepartment record {
+    int headId;
+    string headName;
+    string headOfficeCode;    
 };
 
-type Supervisor record {
-int supId;
-string supName;
-int supGrade;
+type departmentSupervisor record {
+int supsId;
+string supsName;
+int supsGrade;
 };
 
 type assignSupervisor record {
@@ -37,19 +37,19 @@ type KPI record  {|
  int empID ;
 |};
 
-type departmentObjectives record {
-int objId;
-string ObjDescription;
+type departmentDeliverables record {
+int deliveryId;
+string deliveryDescription;
 //string empId;
 };
 
-type empScores record {
+type employeeScores record {
 int score;
 int totalScore;
 int grade;
 };
 
-type EMPLOYEE record {
+type staff record {
 int empID;
 string empPassword;
 string empName;
@@ -59,29 +59,25 @@ int grade;
 int Supervisor;
 };
 
-type tah record {
-int objId;
-};
-
-type KPIInput record {
+type KPI_Input record {
  string KpiName; 
  string Metric;
  int KpiScore;
  int empID;
 };
 
-type gradeKpi record {
+type grade_Kpi record {
    int Grade;  
    int empID;
 };
 
-type createKPI record{
+type create_KPI record{
 string KpiName; 
 string Metric;
 int empID;
 };
 
-type GradeSup record{
+type GradeSupervisor record{
    int empID;
    int SupGrade;
    int SuperID;
@@ -89,11 +85,11 @@ type GradeSup record{
 
 
 
-service /perf on new  graphql:Listener(8080) {
+service /perf on new  graphql:Listener(9090) {
  
     private final mysql:Client db;
     function init() returns error? {
-     self.db = check new ("localhost", "root", "Ninjakilla212", "performanceManagement", 3306);
+     self.db = check new ("localhost", "root", "Gr2001", "GraphQl", 3306);
     }
  
 
@@ -112,10 +108,10 @@ service /perf on new  graphql:Listener(8080) {
 
    //THIS IS FOR THE HOD
     
-     resource function get doesObjectiveExist(int objIdv) returns string|error  {
+     resource function get doesObjectiveExist(int deliveryIdv) returns string|error  {
         // Execute simple query to fetch record with requested id.
-         sql:ParameterizedQuery result = `SELECT * FROM departmentobjectives WHERE  objId = ${objIdv}`;
-         stream<departmentObjectives, sql:Error?> resultStream =   self.db->query(result);
+         sql:ParameterizedQuery result = `SELECT * FROM departmentobjectives WHERE  objId = ${deliveryIdv}`;
+         stream<departmentDeliverables, sql:Error?> resultStream =   self.db->query(result);
          int result1=0;
 
         //   foreach departmentObjectives item in resultStream{
@@ -123,8 +119,8 @@ service /perf on new  graphql:Listener(8080) {
         //         result1="description found!";
         //     }
         //  }
-        check from departmentObjectives vr in resultStream
-        where vr.objId == objIdv
+        check from departmentDeliverables vr in resultStream
+        where vr.deliveryId == deliveryIdv
         do {
             result1=1;
         };
@@ -136,10 +132,10 @@ service /perf on new  graphql:Listener(8080) {
            }
          
     }   
-         remote function createDepartmentObjectives(departmentObjectives objective) returns string|error? {
+         remote function createDepartmentDeliverables(departmentDeliverables objective) returns string|error? {
                sql:ExecutionResult result=check self.db->execute(`
                     INSERT INTO departmentobjectives
-                     VALUES (${objective.objId}, ${objective.ObjDescription})`);
+                     VALUES (${objective.deliveryId}, ${objective.deliveryDescription})`);
 
          //io:println(objective.objId);
          if result.affectedRowCount>0{
@@ -151,9 +147,9 @@ service /perf on new  graphql:Listener(8080) {
   
 }
 
-  remote function deleteDepartmentObjectives(int objIdv) returns string|error? {
+  remote function deleteDepartmentObjectives(int deliveryIdv) returns string|error? {
       sql:ExecutionResult result=check self.db->execute(`
-                    DELETE FROM departmentobjectives WHERE objId = ${objIdv}`);
+                    DELETE FROM departmentobjectives WHERE deliveryId = ${deliveryIdv}`);
 
          if result.affectedRowCount>0{
          return ("Succesfuly deleted objective");
@@ -209,7 +205,7 @@ service /perf on new  graphql:Listener(8080) {
        }  
 }
 
-   remote function UpdateEmployeeKPIs(KPIInput updateKpi) returns string|error? {
+   remote function UpdateEmployeeKPIs(KPI_Input updateKpi) returns string|error? {
       sql:ExecutionResult result=check self.db->execute(`
       UPDATE KPI
       SET KpiName =${updateKpi.KpiName},  Metric =${updateKpi.Metric},  KpiScore =${updateKpi.KpiScore}
@@ -222,7 +218,7 @@ service /perf on new  graphql:Listener(8080) {
        }  
 }
 
-   remote function GradeemployeeKPIs(gradeKpi gkp) returns string|error? {
+   remote function GradeemployeeKPIs(grade_Kpi gkp) returns string|error? {
         sql:ExecutionResult result=check self.db->execute(`
       UPDATE KPI
       SET  Grade =${gkp.Grade}
@@ -238,7 +234,7 @@ service /perf on new  graphql:Listener(8080) {
 
      //THIS IS FOR THE Employee
 
-     remote function CreateemployeeKPIs(createKPI crt) returns string|error? {
+     remote function CreateemployeeKPIs(create_KPI crt) returns string|error? {
       sql:ExecutionResult result=check self.db->execute(`
                     INSERT INTO KPI(KpiName,Metric,empID)
                      VALUES (${crt.KpiName}, ${crt.Metric},${crt.empID})`);
@@ -251,7 +247,7 @@ service /perf on new  graphql:Listener(8080) {
        } 
  }
 
-    remote function GradeSupervisor(GradeSup scr) returns string|error? {
+    remote function GradeSupervisor(GradeSupervisor scr) returns string|error? {
         sql:ExecutionResult result=check self.db->execute(`
       UPDATE SUPERVISIOR
       SET  empID = ${scr.empID},
@@ -264,4 +260,4 @@ service /perf on new  graphql:Listener(8080) {
         return error("Failed to Grade!");
        } 
    }
-} 
+}
