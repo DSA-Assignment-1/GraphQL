@@ -1,8 +1,9 @@
 import ballerina/graphql;
 import ballerina/sql;
 import ballerinax/mysql;
+// import ballerina/io;
 import ballerinax/mysql.driver as _;
-
+// import ballerina/io;
 
 type headOfDepartment record {
     int headId;
@@ -18,13 +19,13 @@ int supsGrade;
 
 type assignSupervisor record {
 int empId;
-int superId;
+int supsId;
 };
 
 type Employee record {
    int empId;
    string empName;
-   
+   //string score;
 };
 
 type KPI record  {|
@@ -39,7 +40,7 @@ type KPI record  {|
 type departmentDeliverables record {
 int deliveryId;
 string deliveryDescription;
-
+//string empId;
 };
 
 type employeeScores record {
@@ -78,8 +79,8 @@ int empID;
 
 type GradeSupervisor record{
    int empID;
-   int SupGrade;
-   int SuperID;
+   int supsGrade;
+   int supsID;
 };
 
 
@@ -90,14 +91,15 @@ service /perf on new  graphql:Listener(9090) {
     function init() returns error? {
      self.db = check new ("localhost", "root", "Gr2001", "GraphQl", 3306);
     }
- 
-     resource function get doesObjectiveExist(int deliveryIdv) returns string|error  {
+
+   //For head of department
+    
+     resource function get doesDeliverableExist(int deliveryIdv) returns string|error  {
         // Execute simple query to fetch record with requested id.
-         sql:ParameterizedQuery result = `SELECT * FROM departmentobjectives WHERE  objId = ${deliveryIdv}`;
+         sql:ParameterizedQuery result = `SELECT * FROM departmentdeliverables WHERE  objId = ${deliveryIdv}`;
          stream<departmentDeliverables, sql:Error?> resultStream =   self.db->query(result);
          int result1=0;
 
-       
         check from departmentDeliverables vr in resultStream
         where vr.deliveryId == deliveryIdv
         do {
@@ -113,10 +115,9 @@ service /perf on new  graphql:Listener(9090) {
     }   
          remote function createDepartmentDeliverables(departmentDeliverables objective) returns string|error? {
                sql:ExecutionResult result=check self.db->execute(`
-                    INSERT INTO departmentobjectives
+                    INSERT INTO departmentdeliverables
                      VALUES (${objective.deliveryId}, ${objective.deliveryDescription})`);
 
-         //io:println(objective.objId);
          if result.affectedRowCount>0{
          return ("Succesfuly added objective");
        } else {
@@ -126,9 +127,9 @@ service /perf on new  graphql:Listener(9090) {
   
 }
 
-  remote function deleteDepartmentObjectives(int deliveryIdv) returns string|error? {
+  remote function deleteDepartmentDeliverables(int deliveryIdv) returns string|error? {
       sql:ExecutionResult result=check self.db->execute(`
-                    DELETE FROM departmentobjectives WHERE deliveryId = ${deliveryIdv}`);
+                    DELETE FROM departmentdeliverables WHERE deliveryId = ${deliveryIdv}`);
 
          if result.affectedRowCount>0{
          return ("Succesfuly deleted objective");
@@ -138,7 +139,7 @@ service /perf on new  graphql:Listener(9090) {
 }
  
    remote function AssignSupervisor(assignSupervisor obj) returns string|error? {
-      sql:ExecutionResult result=check self.db->execute(`UPDATE EMPLOYEE SET Supervisor =${obj.superId} WHERE empID = ${obj.empId}`);
+      sql:ExecutionResult result=check self.db->execute(`UPDATE staff SET Supervisor =${obj.supsId} WHERE empID = ${obj.empId}`);
 
          if result.affectedRowCount>0{
          return ("Succesfully assigned");
@@ -157,8 +158,8 @@ service /perf on new  graphql:Listener(9090) {
        }  
 }
 
-    resource function get checkEmpKpi(int empId) returns KPI|error {
-       // Execute simple query to fetch record with requested id.
+    resource function get checkStaffKpi(int empId) returns KPI|error {
+       //query to fetch record with requested id.
          sql:ParameterizedQuery result = `SELECT * FROM KPI WHERE  empID = ${empId}`;
          stream<KPI, sql:Error?> resultStream =   self.db->query(result);
          //int result1=0;
@@ -171,9 +172,9 @@ service /perf on new  graphql:Listener(9090) {
   
 
 
-    
+     //For Supervisor
 
-       remote function DeleteEmployeeKPI(int empID1) returns string|error? {
+       remote function DeleteStaffKPI(int empID1) returns string|error? {
       sql:ExecutionResult result=check self.db->execute(`
                     DELETE FROM KPI WHERE empID = ${empID1}`);
 
@@ -184,7 +185,7 @@ service /perf on new  graphql:Listener(9090) {
        }  
 }
 
-   remote function UpdateEmployeeKPIs(KPI_Input updateKpi) returns string|error? {
+   remote function UpdateStaffKPIs(KPI_Input updateKpi) returns string|error? {
       sql:ExecutionResult result=check self.db->execute(`
       UPDATE KPI
       SET KpiName =${updateKpi.KpiName},  Metric =${updateKpi.Metric},  KpiScore =${updateKpi.KpiScore}
@@ -197,7 +198,7 @@ service /perf on new  graphql:Listener(9090) {
        }  
 }
 
-   remote function GradeemployeeKPIs(grade_Kpi gkp) returns string|error? {
+   remote function GradeStaffKPIs(grade_Kpi gkp) returns string|error? {
         sql:ExecutionResult result=check self.db->execute(`
       UPDATE KPI
       SET  Grade =${gkp.Grade}
@@ -211,14 +212,12 @@ service /perf on new  graphql:Listener(9090) {
    }
 
 
-     
-
-     remote function CreateemployeeKPIs(create_KPI crt) returns string|error? {
+     //For Staff
+     remote function CreateStaffKPIs(create_KPI crt) returns string|error? {
       sql:ExecutionResult result=check self.db->execute(`
                     INSERT INTO KPI(KpiName,Metric,empID)
                      VALUES (${crt.KpiName}, ${crt.Metric},${crt.empID})`);
 
-        
          if result.affectedRowCount>0{
          return ("Succesfuly added KPI");
        } else {
@@ -230,8 +229,8 @@ service /perf on new  graphql:Listener(9090) {
         sql:ExecutionResult result=check self.db->execute(`
       UPDATE SUPERVISIOR
       SET  empID = ${scr.empID},
-       SupGrade = ${scr.SupGrade}
-      WHERE SuperID = ${scr.SuperID}`);
+       supsGrade = ${scr.supsGrade}
+      WHERE supsID = ${scr.supsID}`);
 
          if result.affectedRowCount>0{
          return ("Succesfully  Graded!");
