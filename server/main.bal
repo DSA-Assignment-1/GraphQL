@@ -1,9 +1,8 @@
 import ballerina/graphql;
 import ballerina/sql;
 import ballerinax/mysql;
-// import ballerina/io;
 import ballerinax/mysql.driver as _;
-// import ballerina/io;
+
 
 type headOfDepartment record {
     int headId;
@@ -25,7 +24,7 @@ int superId;
 type Employee record {
    int empId;
    string empName;
-   //string score;
+   
 };
 
 type KPI record  {|
@@ -40,7 +39,7 @@ type KPI record  {|
 type departmentDeliverables record {
 int deliveryId;
 string deliveryDescription;
-//string empId;
+
 };
 
 type employeeScores record {
@@ -92,33 +91,13 @@ service /perf on new  graphql:Listener(9090) {
      self.db = check new ("localhost", "root", "Gr2001", "GraphQl", 3306);
     }
  
-
-// function doesObjectiveExist(departmentObjectives) returns boolean {
-//     sql:Connection conn = check database->obtain();
-//     sql:PreparedStatement stmt = check conn->prepareStatement("SELECT objId FROM departmentObjectives WHERE objId = ?");
-//     stmt->setInt(1, id);
-//     stream<departmentObjectives, sql:Result> result = check stmt->executeQuery();
-    
-//     if (result.length() > 0) {
-//         return true;
-//     } else {
-//         return false;
-//     }
-// }
-
-   //THIS IS FOR THE HOD
-    
      resource function get doesObjectiveExist(int deliveryIdv) returns string|error  {
         // Execute simple query to fetch record with requested id.
          sql:ParameterizedQuery result = `SELECT * FROM departmentobjectives WHERE  objId = ${deliveryIdv}`;
          stream<departmentDeliverables, sql:Error?> resultStream =   self.db->query(result);
          int result1=0;
 
-        //   foreach departmentObjectives item in resultStream{
-        //     if(item.ObjDescription !=""){
-        //         result1="description found!";
-        //     }
-        //  }
+       
         check from departmentDeliverables vr in resultStream
         where vr.deliveryId == deliveryIdv
         do {
@@ -192,7 +171,7 @@ service /perf on new  graphql:Listener(9090) {
   
 
 
-     // THIS IS FOR THE Supervisor
+    
 
        remote function DeleteEmployeeKPI(int empID1) returns string|error? {
       sql:ExecutionResult result=check self.db->execute(`
@@ -232,14 +211,14 @@ service /perf on new  graphql:Listener(9090) {
    }
 
 
-     //THIS IS FOR THE Employee
+     
 
      remote function CreateemployeeKPIs(create_KPI crt) returns string|error? {
       sql:ExecutionResult result=check self.db->execute(`
                     INSERT INTO KPI(KpiName,Metric,empID)
                      VALUES (${crt.KpiName}, ${crt.Metric},${crt.empID})`);
 
-         //io:println(objective.objId);
+        
          if result.affectedRowCount>0{
          return ("Succesfuly added KPI");
        } else {
