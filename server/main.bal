@@ -17,6 +17,12 @@ string supsName;
 int supsGrade;
 };
 
+type test record {
+int id;
+string pass;
+string tbname;
+};
+
 type assignSupervisor record {
 int empId;
 int supsId;
@@ -91,7 +97,6 @@ service /perf on new  graphql:Listener(9090) {
     function init() returns error? {
      self.db = check new ("localhost", "root", "Gr2001", "GraphQl", 3306);
     }
-
    //For head of department
     
      resource function get doesDeliverableExist(int deliveryIdv) returns string|error  {
@@ -237,5 +242,62 @@ service /perf on new  graphql:Listener(9090) {
        } else {
         return error("Failed to Grade!");
        } 
+   }
+   resource  function get checkClient(test checks) returns string|error? {
+       sql:ParameterizedQuery result=``;
+      if(checks.tbname=="Employee"){
+        result=`
+           SELECT * FROM  staff WHERE empID=${checks.id} AND empPassword = ${checks.pass} `;
+      stream<staff, sql:Error?> resultStream =   self.db->query(result);
+      int result1=0;
+   
+        check from staff vr in resultStream
+        where vr.empID == checks.id
+        do {
+            result1=1;
+        };
+           
+           if(result1==1){
+            return "1";
+           }else{
+             return "2";
+           }
+       }
+   else if(checks.tbname=="departmentSupervisor"){
+     result=`
+           SELECT * FROM  SUPERVISIOR WHERE SuperID=${checks.id} AND SuperPassword =${checks.pass} `;
+                 stream<departmentSupervisor, sql:Error?> resultStream =   self.db->query(result);
+      int result1=0;
+   
+        check from departmentSupervisor vr in resultStream
+        where vr.supsId == checks.id
+        do {
+            result1=1;
+        };
+           
+           if(result1==1){
+            return "1";
+           }else{
+             return "2";
+           }
+   }
+   else{
+        result=`
+           SELECT * FROM  HOD WHERE HodID=${checks.id} AND HodPassword =${checks.pass}`;
+            stream<headOfDepartment, sql:Error?> resultStream =   self.db->query(result);
+      int result1=0;
+   
+        check from headOfDepartment vr in resultStream
+        where vr.headId == checks.id
+        do {
+            result1=1;
+        };
+           
+           if(result1==1){
+            return "1";
+           }else{
+             return "2";
+           }
+   }
    }
 }
